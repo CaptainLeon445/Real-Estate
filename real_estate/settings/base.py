@@ -3,17 +3,17 @@ from pathlib import Path
 
 env=environ.Env(DEBUG=(bool, False))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 environ.Env.read_env(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY=env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG")
+DEBUG=env("DEBUG")
 
 ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(" ")
 
@@ -35,14 +35,18 @@ THIRD_PARTY_APPS=[
     "rest_framework",
     "django_filters",
     "django_countries",
-    "phonenumber_field"
+    "phonenumber_field",
+    "djoser",
+    "rest_framework_simplejwt"
 ]
 
 LOCAL_APPS=[
     "apps.common",
     "apps.user",
     "apps.profiles",
-    "apps.rating"
+    "apps.rating",
+    "apps.properties",
+    "apps.enquiries"
 ]
 
 INSTALLED_APPS= DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -131,3 +135,96 @@ MEDIA_ROOT=BASE_DIR/"mediafiles"
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+AUTH_USER_MODEL='user.User'
+
+REST_FRAMEWORK={
+    "DEFAULT_AUTHENTICATION_CLASSES":(
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    )
+}
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "AUTH_HEADER_TYPES":(
+        "Bearer",
+        "JWT"
+    ),
+    "ACCESS_TOKEN_LIFETIME":timedelta(minutes=120),
+    "REFRESH_TOKEN_LIFETIME":timedelta(days=1),
+    # "SIGNING_KEY": env("SIGNING_KEY"),
+    "AUTH_HEADER_NAME":"HTTP_AUTHORIZATION",
+    "AUTH_TOKEN_CLASSES":("rest_framework_simplejwt.tokens.AccessToken",),
+}
+
+DJOSER={
+    "LOGIN_FIELD":"email",
+    "USER_CREATE_PASSWORD_RETYPE":True,
+    "USERNAME_CHANGED_EMAIL_CONFIMATION":True,
+    "PASSWORD_CHANGED_EMAIL_CONFIMATION":True,
+    "SEND_CONFIRMATION_EMAIL":True,
+    "PASSWORD_RESET_CONFIRM_URL":"password/reset/confirm/{uid}/{token}",
+    "SET_PASSWORD_RETYPE":True,
+    "PASSWORD_RESET_CONFIRM_RETYPE":True,
+    "USERNAME_RESET_CONFIRM_URL":"email/reset/confirm/{uid}/{token}",
+    "ACTIVATION_URL":"activate/{uid}/{token}",
+    "SEND_ACTIVATION_EMAIL":True,
+    "SERIALIZERS":{
+        "user_create":"apps.user.serializers.CreateUserSerializer",
+        "user":"apps.user.serializers.UserSerializer",
+        "current_user":"apps.user.serializers.UserSerializer",
+        "user_delete":"djoser.serializers.UserDeleteSerializer"
+    },
+}
+
+#Email Configuration
+EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_PORT=env('EMAIL_PORT')
+EMAIL_HOST=env('EMAIL_HOST')
+EMAIL_HOST_USER=env('EMAIL_HOST_USER')
+DEFAULT_FROM_EMAIL='xyz@real-estate.com'
+EMAIL_HOST_PASSWORD=env('EMAIL_HOST_PASSWORD')
+DOMAIN=env('DOMAIN')
+SITE_NAME='XYZ REAL ESTATE'
+
+
+
+import logging
+import logging.config
+from django.utils.log import DEFAULT_LOGGING
+
+logger=logging.getLogger(__name__)
+
+LOG_LEVEL="INFO"
+
+logging.config.dictConfig({
+    "version":1,
+    "disable_existing_loggers": False,
+    "formatters":{
+        "console":{
+            "format":"%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+        },
+        "file":{"format":"%(asctime)s %(name)-12s %(levelname)-8s %(message)s",},
+        "django.server": DEFAULT_LOGGING["formatters"]["django.server"],
+    },
+    "handlers":{
+        "console":{
+            "class":"logging.StreamHandler",
+            "formatter":"console",
+        },
+        "file":{
+            "level":"INFO",
+            "class":"logging.FileHandler",
+            "formatter":"file",
+            "filename":"logs/real_estate.log",
+        }, 
+        "django.server": DEFAULT_LOGGING["handlers"]["django.server"],
+    },
+    "loggers":{
+        "":{"level":"INFO", "handlers":["console","file"],"propagate":False},
+        "apps":{
+            "level":"INFO", "handlers":["console"],"propagate":False},
+        "django.server": DEFAULT_LOGGING["loggers"]["django.server"],
+    },
+
+})
